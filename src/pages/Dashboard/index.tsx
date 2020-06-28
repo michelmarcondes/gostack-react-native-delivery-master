@@ -71,41 +71,26 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     async function loadFoods(): Promise<void> {
       let allFoods = Array<Food>();
+      let query = `foods`;
 
-      api.get('foods').then(response => {
+      if (selectedCategory && !searchValue) {
+        query += `?category_like=${selectedCategory}`;
+      }
+
+      if (!selectedCategory && searchValue) {
+        query += `?name_like=${searchValue}`;
+      }
+
+      if (searchValue && selectedCategory) {
+        query += `?category_like=${selectedCategory}&name_like=${searchValue}`;
+      }
+
+      api.get(`${query}`).then(response => {
         allFoods = response.data;
 
-        if (selectedCategory) {
-          allFoods = allFoods.filter(
-            food => food.category === selectedCategory,
-          );
-        }
-
-        if (searchValue && selectedCategory) {
-          allFoods = allFoods.filter(
-            food =>
-              (food.name
-                .toLocaleUpperCase()
-                .indexOf(searchValue.toLocaleUpperCase()) >= 0 ||
-                food.description
-                  .toLocaleUpperCase()
-                  .indexOf(searchValue.toLocaleUpperCase()) >= 0) &&
-              food.category === selectedCategory,
-          );
-        }
-
-        if (searchValue && !selectedCategory) {
-          allFoods = allFoods.filter(
-            food =>
-              food.name
-                .toLocaleUpperCase()
-                .indexOf(searchValue.toLocaleUpperCase()) >= 0 ||
-              food.description
-                .toLocaleUpperCase()
-                .indexOf(searchValue.toLocaleUpperCase()) >= 0,
-          );
-        }
-
+        allFoods.forEach(food => {
+          food.formattedPrice = formatValue(food.price);
+        });
         setFoods(allFoods);
       });
     }
@@ -132,7 +117,7 @@ const Dashboard: React.FC = () => {
           name="log-out"
           size={24}
           color="#FFB84D"
-          onPress={() => navigation.navigate('Home')}
+          onPress={() => navigate('Home')}
         />
       </Header>
       <FilterContainer>
