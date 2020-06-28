@@ -71,28 +71,23 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     async function loadFoods(): Promise<void> {
       let allFoods = Array<Food>();
-      let query = `foods`;
+      const query = `foods`;
 
-      if (selectedCategory && !searchValue) {
-        query += `?category_like=${selectedCategory}`;
-      }
+      api
+        .get('foods', {
+          params: {
+            category_like: selectedCategory,
+            name_like: searchValue,
+          },
+        })
+        .then(response => {
+          allFoods = response.data;
 
-      if (!selectedCategory && searchValue) {
-        query += `?name_like=${searchValue}`;
-      }
-
-      if (searchValue && selectedCategory) {
-        query += `?category_like=${selectedCategory}&name_like=${searchValue}`;
-      }
-
-      api.get(`${query}`).then(response => {
-        allFoods = response.data;
-
-        allFoods.forEach(food => {
-          food.formattedPrice = formatValue(food.price);
+          allFoods.forEach(food => {
+            food.formattedPrice = formatValue(food.price);
+          });
+          setFoods(allFoods);
         });
-        setFoods(allFoods);
-      });
     }
 
     loadFoods();
