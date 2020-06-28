@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Image, ScrollView } from 'react-native';
 
 import Icon from 'react-native-vector-icons/Feather';
@@ -35,6 +35,7 @@ interface Food {
   price: number;
   thumbnail_url: string;
   formattedPrice: string;
+  category: number;
 }
 
 interface Category {
@@ -51,31 +52,77 @@ const Dashboard: React.FC = () => {
   >();
   const [searchValue, setSearchValue] = useState('');
 
-  const navigation = useNavigation();
+  const { navigate } = useNavigation();
 
   async function handleNavigate(id: number): Promise<void> {
-    // Navigate do ProductDetails page
+    navigate('FoodDetails', { id });
   }
 
   useEffect(() => {
-    async function loadFoods(): Promise<void> {
-      // Load Foods from API
-    }
-
-    loadFoods();
-  }, [selectedCategory, searchValue]);
-
-  useEffect(() => {
     async function loadCategories(): Promise<void> {
-      // Load categories from API
+      api.get('categories').then(response => {
+        setCategories(response.data);
+      });
     }
 
     loadCategories();
   }, []);
 
-  function handleSelectCategory(id: number): void {
-    // Select / deselect category
-  }
+  useEffect(() => {
+    async function loadFoods(): Promise<void> {
+      let allFoods = Array<Food>();
+
+      api.get('foods').then(response => {
+        allFoods = response.data;
+
+        if (selectedCategory) {
+          allFoods = allFoods.filter(
+            food => food.category === selectedCategory,
+          );
+        }
+
+        if (searchValue && selectedCategory) {
+          allFoods = allFoods.filter(
+            food =>
+              (food.name
+                .toLocaleUpperCase()
+                .indexOf(searchValue.toLocaleUpperCase()) >= 0 ||
+                food.description
+                  .toLocaleUpperCase()
+                  .indexOf(searchValue.toLocaleUpperCase()) >= 0) &&
+              food.category === selectedCategory,
+          );
+        }
+
+        if (searchValue && !selectedCategory) {
+          allFoods = allFoods.filter(
+            food =>
+              food.name
+                .toLocaleUpperCase()
+                .indexOf(searchValue.toLocaleUpperCase()) >= 0 ||
+              food.description
+                .toLocaleUpperCase()
+                .indexOf(searchValue.toLocaleUpperCase()) >= 0,
+          );
+        }
+
+        setFoods(allFoods);
+      });
+    }
+
+    loadFoods();
+  }, [selectedCategory, searchValue]);
+
+  const handleSelectCategory = useCallback(
+    (id: number) => {
+      if (selectedCategory === id) {
+        setSelectedCategory(undefined);
+      } else {
+        setSelectedCategory(id);
+      }
+    },
+    [selectedCategory],
+  );
 
   return (
     <Container>

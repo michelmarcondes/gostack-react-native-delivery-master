@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Image } from 'react-native';
 
 import api from '../../services/api';
@@ -23,7 +23,7 @@ interface Food {
   name: string;
   description: string;
   price: number;
-  formattedValue: number;
+  formattedValue: string;
   thumbnail_url: string;
 }
 
@@ -32,7 +32,26 @@ const Orders: React.FC = () => {
 
   useEffect(() => {
     async function loadOrders(): Promise<void> {
-      // Load orders from API
+      api.get('orders').then(response => {
+        let formattedOrders = Array<Food>();
+
+        formattedOrders = response.data;
+
+        formattedOrders = formattedOrders.map(
+          ({ id, name, description, price, thumbnail_url }) => {
+            return {
+              id,
+              name,
+              description,
+              price,
+              formattedValue: formatValue(price),
+              thumbnail_url,
+            };
+          },
+        );
+
+        setOrders(formattedOrders);
+      });
     }
 
     loadOrders();
@@ -59,7 +78,7 @@ const Orders: React.FC = () => {
               <FoodContent>
                 <FoodTitle>{item.name}</FoodTitle>
                 <FoodDescription>{item.description}</FoodDescription>
-                <FoodPricing>{item.formattedPrice}</FoodPricing>
+                <FoodPricing>{item.formattedValue}</FoodPricing>
               </FoodContent>
             </Food>
           )}
